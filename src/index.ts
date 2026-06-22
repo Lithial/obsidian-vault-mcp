@@ -18,7 +18,7 @@ try {
   process.exit(1);
 }
 
-const defaultProject = await detectDefaultProject();
+const defaultProject = detectDefaultProject();
 if (defaultProject) {
   console.error(`[obsidian-vault-mcp] Default project: ${defaultProject}`);
 }
@@ -27,13 +27,13 @@ function buildServer(): McpServer {
   const server = new McpServer({ name: "obsidian-vault", version: "1.0.0" });
 
   const projectDesc = defaultProject
-    ? `Project name — defaults to "${defaultProject}"`
-    : "Project name";
+    ? `Project name — defaults to "${defaultProject}". If not set, derive from the git remote name of your working directory (e.g. git remote get-url origin | sed 's|.*/||;s|\.git$||') or use the folder name as fallback`
+    : "Project name — derive from the git remote name of your working directory (e.g. git remote get-url origin | sed 's|.*/||;s|\\.git$||') or use the folder name as fallback";
 
-  // Resolves project for write tools: explicit arg > env/git default > error
+  // Resolves project for write tools: explicit arg > PROJECT_NAME env var > error
   function requireProject(arg: string | undefined): string {
     const resolved = arg || defaultProject;
-    if (!resolved) throw new Error("No project specified and no default project detected (set PROJECT_NAME or run from a git repo)");
+    if (!resolved) throw new Error("No project specified. Pass the git remote name of your working directory as 'project' (e.g. run: git remote get-url origin | sed 's|.*/||;s|\\.git$||'), or set PROJECT_NAME env var on the server.");
     return resolved;
   }
 
