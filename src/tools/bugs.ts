@@ -120,8 +120,9 @@ export async function updateBugStatus(
   let content: string;
   try {
     ({ data, content } = await readNote(filePath));
-  } catch {
-    throw new Error(`File not found: ${filePath}`);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") throw new Error(`File not found: ${filePath}`);
+    throw e;
   }
   data["status"] = status;
   await writeNote(filePath, data, content);

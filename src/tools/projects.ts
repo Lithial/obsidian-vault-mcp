@@ -7,7 +7,8 @@ export async function listProjects(): Promise<string[]> {
   try {
     const entries = await fs.readdir(projectsDir, { withFileTypes: true });
     return entries.filter((e) => e.isDirectory()).map((e) => e.name);
-  } catch {
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
     return [];
   }
 }
