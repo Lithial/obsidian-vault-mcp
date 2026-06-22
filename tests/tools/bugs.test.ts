@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import matter from "gray-matter";
-import { writeBug, listBugs } from "../../src/tools/bugs.js";
+import { writeBug, listBugs, getNextBug, updateBugStatus } from "../../src/tools/bugs.js";
 
 describe("writeBug", () => {
   let tmpDir: string;
@@ -106,5 +106,91 @@ describe("listBugs", () => {
     expect(open).toHaveLength(2);
     const resolved = await listBugs(undefined, "resolved");
     expect(resolved).toHaveLength(1);
+  });
+});
+
+describe("getNextBug", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "vault-test-"));
+    process.env.VAULT_PATH = tmpDir;
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns found:false when no open bugs", async () => {
+    const result = await getNextBug();
+    expect(result.found).toBe(false);
+  });
+
+  it("returns the highest priority open bug", async () => {
+    await writeBug("P1", "Low prio bug", "d", 5);
+    await writeBug("P1", "High prio bug", "d", 1);
+    const result = await getNextBug();
+    expect(result.found).toBe(true);
+    if (result.found) {
+      expect(result.bug.frontmatter.priority).toBe(1);
+    }
+  });
+
+  it("breaks ties by created date (oldest first)", async () => {
+    const olderPath = path.join(tmpDir, "Projects", "P1", "Bugs", "older-bug.md");
+    await fs.mkdir(path.dirname(olderPath), { recursive: true });
+    await fs.writeFile(olderPath, "---\ntype: bug\nproject: P1\nstatus: open\npriority: 2\ncreated: 2026-01-01\n---\nolder");
+    const newerPath = path.join(tmpDir, "Projects", "P1", "Bugs", "newer-bug.md");
+    await fs.writeFile(newerPath, "---\ntype: bug\nproject: P1\nstatus: open\npriority: 2\ncreated: 2026-06-01\n---\nnewer");
+    const result = await getNextBug();
+    expect(result.found).toBe(true);
+    if (result.found) {
+      expect(result.bug.title).toBe("older-bug");
+    }
+  });
+
+  it("scopes to a project when specified", async () => {
+    await writeBug("ProjectA", "Bug in A", "d", 1);
+    await writeBug("ProjectB", "Bug in B", "d", 2);
+    const result = await getNextBug("ProjectB");
+    expect(result.found).toBe(true);
+    if (result.found) {
+      expect(result.bug.frontmatter.project).toBe("ProjectB");
+    }
+  });
+});
+
+describe("updateBugStatus", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "vault-test-"));
+    process.env.VAULT_PATH = tmpDir;
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("updates status in frontmatter and preserves content", async () => {
+    const { path: bugPath } = await writeBug("P1", "A bug", "original content");
+    await updateBugStatus(bugPath, "in-progress");
+    const raw = await fs.readFile(bugPath, "utf-8");
+    const { data, content } = matter(raw);
+    expect(data.status).toBe("in-progress");
+    expect(content.trim()).toContain("original content");
+  });
+
+  it("can transition to resolved", async () => {
+    const { path: bugPath } = await writeBug("P1", "Done bug", "d");
+    await updateBugStatus(bugPath, "resolved");
+    const raw = await fs.readFile(bugPath, "utf-8");
+    const { data } = matter(raw);
+    expect(data.status).toBe("resolved");
+  });
+
+  it("throws with the path when file does not exist", async () => {
+    const badPath = path.join(tmpDir, "nonexistent.md");
+    await expect(updateBugStatus(badPath, "resolved")).rejects.toThrow(badPath);
   });
 });

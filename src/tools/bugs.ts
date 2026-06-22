@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getVaultPath, slugify, writeNote, readNote, globNotes } from "../vault.js";
-import type { BugFrontmatter, BugSummary } from "../types.js";
+import type { BugFrontmatter, BugNote, BugSummary } from "../types.js";
 
 export async function writeBug(
   project: string,
@@ -67,16 +67,63 @@ export async function listBugs(
   return summaries.sort((a, b) => a.priority - b.priority);
 }
 
-// Placeholders — implemented in Task 6
 export async function getNextBug(
-  _project?: string
-): Promise<{ found: false }> {
-  return { found: false };
+  project?: string
+): Promise<{ found: true; bug: BugNote } | { found: false }> {
+  const openBugs = await listBugs(project, "open");
+  if (openBugs.length === 0) return { found: false };
+
+  const topPriority = openBugs[0].priority;
+  const topTier = openBugs.filter((b) => b.priority === topPriority);
+
+  if (topTier.length === 1) {
+    const { data, content } = await readNote(topTier[0].path);
+    return {
+      found: true,
+      bug: {
+        frontmatter: data as BugFrontmatter,
+        content,
+        path: topTier[0].path,
+        title: topTier[0].title,
+      },
+    };
+  }
+
+  // Tie-break: read created dates and pick the oldest
+  const withDates = await Promise.all(
+    topTier.map(async (b) => {
+      const { data, content } = await readNote(b.path);
+      const raw = data["created"];
+      const created = raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw);
+      return { summary: b, data, content, created };
+    })
+  );
+  withDates.sort((a, b) => a.created.localeCompare(b.created));
+  const winner = withDates[0];
+
+  return {
+    found: true,
+    bug: {
+      frontmatter: winner.data as BugFrontmatter,
+      content: winner.content,
+      path: winner.summary.path,
+      title: winner.summary.title,
+    },
+  };
 }
 
 export async function updateBugStatus(
-  _filePath: string,
-  _status: "open" | "in-progress" | "resolved"
+  filePath: string,
+  status: "open" | "in-progress" | "resolved"
 ): Promise<{ path: string; status: string }> {
-  throw new Error("Not yet implemented");
+  let data: Record<string, unknown>;
+  let content: string;
+  try {
+    ({ data, content } = await readNote(filePath));
+  } catch {
+    throw new Error(`File not found: ${filePath}`);
+  }
+  data["status"] = status;
+  await writeNote(filePath, data, content);
+  return { path: filePath, status };
 }
