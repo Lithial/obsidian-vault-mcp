@@ -37,7 +37,7 @@ export async function readNote(
   filePath: string
 ): Promise<{ data: Record<string, unknown>; content: string }> {
   const raw = await fs.readFile(filePath, "utf-8");
-  const { data, content } = matter(raw);
+  const { data, content } = matter(raw, { cast: false });
   return { data, content };
 }
 

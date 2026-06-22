@@ -79,4 +79,12 @@ describe("writeNote / readNote / globNotes", () => {
     const files = await globNotes(path.join(tmpDir, "**", "*.md"));
     expect(files).toHaveLength(2);
   });
+
+  it('returns date-like frontmatter values as strings, not Date objects', async () => {
+    const filePath = path.join(tmpDir, 'dated.md');
+    await writeNote(filePath, { created: '2026-06-22' }, 'body');
+    const { data } = await readNote(filePath);
+    expect(typeof data.created).toBe('string');
+    expect(data.created).toBe('2026-06-22');
+  });
 });
