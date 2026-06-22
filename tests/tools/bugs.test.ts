@@ -79,7 +79,7 @@ describe("listBugs", () => {
     expect(await listBugs()).toEqual([]);
   });
 
-  it("returns all open bugs sorted by priority", async () => {
+  it("returns all bugs sorted by priority", async () => {
     await writeBug("P1", "Low priority bug", "d", 5);
     await writeBug("P1", "High priority bug", "d", 1);
     await writeBug("P1", "Mid priority bug", "d", 3);

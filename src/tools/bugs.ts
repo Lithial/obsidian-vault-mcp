@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getVaultPath, slugify, writeNote, readNote, globNotes } from "../vault.js";
-import type { BugFrontmatter, BugNote, BugSummary } from "../types.js";
+import type { BugFrontmatter, BugSummary } from "../types.js";
 
 export async function writeBug(
   project: string,
