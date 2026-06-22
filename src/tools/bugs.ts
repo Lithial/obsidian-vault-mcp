@@ -81,7 +81,7 @@ export async function getNextBug(
     return {
       found: true,
       bug: {
-        frontmatter: data as BugFrontmatter,
+        frontmatter: data as unknown as BugFrontmatter,
         content,
         path: topTier[0].path,
         title: topTier[0].title,
@@ -104,7 +104,7 @@ export async function getNextBug(
   return {
     found: true,
     bug: {
-      frontmatter: winner.data as BugFrontmatter,
+      frontmatter: winner.data as unknown as BugFrontmatter,
       content: winner.content,
       path: winner.summary.path,
       title: winner.summary.title,

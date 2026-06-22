@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
-import { glob } from "fast-glob";
+import fg from "fast-glob";
+const { glob } = fg;
 
 export function getVaultPath(): string {
   const vaultPath = process.env.VAULT_PATH;
@@ -37,7 +38,7 @@ export async function readNote(
   filePath: string
 ): Promise<{ data: Record<string, unknown>; content: string }> {
   const raw = await fs.readFile(filePath, "utf-8");
-  const { data, content } = matter(raw, { cast: false });
+  const { data, content } = matter(raw);
   return { data, content };
 }
 
