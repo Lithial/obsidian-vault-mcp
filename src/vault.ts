@@ -13,6 +13,19 @@ export function getVaultPath(): string {
   return vaultPath;
 }
 
+export async function detectDefaultProject(): Promise<string | undefined> {
+  if (process.env.PROJECT_NAME) return process.env.PROJECT_NAME;
+  try {
+    const { execFile } = await import("node:child_process");
+    const { promisify } = await import("node:util");
+    const exec = promisify(execFile);
+    const { stdout } = await exec("git", ["rev-parse", "--show-toplevel"]);
+    return stdout.trim().split("/").pop() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function slugify(title: string): string {
   return title
     .toLowerCase()

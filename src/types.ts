@@ -4,6 +4,20 @@ export interface FeatureFrontmatter {
   created: string;
 }
 
+export interface FeatureSummary {
+  title: string;
+  path: string;
+  project: string;
+  created: string;
+}
+
+export interface FeatureNote {
+  frontmatter: FeatureFrontmatter;
+  content: string;
+  path: string;
+  title: string;
+}
+
 export interface BugFrontmatter {
   type: "bug";
   project: string;
