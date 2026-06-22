@@ -128,3 +128,13 @@ export async function updateBugStatus(
   await writeNote(filePath, data, content);
   return { path: filePath, status };
 }
+
+export async function getBug(filePath: string): Promise<BugNote> {
+  const { data, content } = await readNote(filePath);
+  return {
+    frontmatter: data as unknown as BugFrontmatter,
+    content: content.trim(),
+    path: filePath,
+    title: path.basename(filePath, ".md"),
+  };
+}

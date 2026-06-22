@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getVaultPath, detectDefaultProject } from "./vault.js";
 import { listProjects } from "./tools/projects.js";
 import { writeFeatureDoc, listFeatures, getFeatureDoc } from "./tools/features.js";
-import { writeBug, listBugs, getNextBug, updateBugStatus } from "./tools/bugs.js";
+import { writeBug, listBugs, getNextBug, updateBugStatus, getBug } from "./tools/bugs.js";
 
 // Validate vault at startup
 const vaultPath = getVaultPath();
@@ -85,6 +85,18 @@ function buildServer(): McpServer {
     async ({ path: filePath }) => {
       const feature = await getFeatureDoc(filePath);
       return { content: [{ type: "text" as const, text: JSON.stringify(feature) }] };
+    }
+  );
+
+  server.tool(
+    "get_bug",
+    "Read the full content and metadata of a bug note by its file path",
+    {
+      path: z.string().describe("Absolute path to the bug note file"),
+    },
+    async ({ path: filePath }) => {
+      const bug = await getBug(filePath);
+      return { content: [{ type: "text" as const, text: JSON.stringify(bug) }] };
     }
   );
 
