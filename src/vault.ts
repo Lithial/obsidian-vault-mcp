@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import fg from "fast-glob";
+import yaml from "js-yaml";
 const { glob } = fg;
 
 export function getVaultPath(): string {
@@ -38,7 +39,9 @@ export async function readNote(
   filePath: string
 ): Promise<{ data: Record<string, unknown>; content: string }> {
   const raw = await fs.readFile(filePath, "utf-8");
-  const { data, content } = matter(raw);
+  const { data, content } = matter(raw, {
+    engines: { yaml: { parse: (str: string) => yaml.load(str, { schema: yaml.JSON_SCHEMA }) as Record<string, unknown> } },
+  });
   return { data, content };
 }
 
