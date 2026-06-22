@@ -1,0 +1,17 @@
+services:
+  obsidian-vault-mcp:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3940:3940"
+    environment:
+      VAULT_PATH: /vault
+      PORT: "3940"
+    volumes:
+      - /mnt/c/Users/james/OneDrive/Documents/Obsidian/Taskboard:/vault:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3940/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
