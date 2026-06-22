@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import matter from "gray-matter";
-import { writeBug, listBugs, getNextBug, updateBugStatus } from "../../src/tools/bugs.js";
+import { writeBug, listBugs, getNextBug, updateBugStatus, getBug } from "../../src/tools/bugs.js";
 
 describe("writeBug", () => {
   let tmpDir: string;
@@ -192,5 +192,34 @@ describe("updateBugStatus", () => {
   it("throws with the path when file does not exist", async () => {
     const badPath = path.join(tmpDir, "nonexistent.md");
     await expect(updateBugStatus(badPath, "resolved")).rejects.toThrow(badPath);
+  });
+});
+
+describe("getBug", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "vault-test-"));
+    process.env.VAULT_PATH = tmpDir;
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns frontmatter, content, path, and title", async () => {
+    const written = await writeBug("MyProject", "Camera glitch on respawn", "Repro steps here.", 2);
+    const result = await getBug(written.path);
+    expect(result.frontmatter.type).toBe("bug");
+    expect(result.frontmatter.project).toBe("MyProject");
+    expect(result.frontmatter.status).toBe("open");
+    expect(result.frontmatter.priority).toBe(2);
+    expect(result.content).toContain("Repro steps here.");
+    expect(result.path).toBe(written.path);
+    expect(result.title).toBe("camera-glitch-on-respawn");
+  });
+
+  it("throws on a nonexistent path", async () => {
+    await expect(getBug("/nonexistent/path.md")).rejects.toThrow();
   });
 });
