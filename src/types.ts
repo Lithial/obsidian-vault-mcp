@@ -25,6 +25,6 @@ export interface BugSummary {
   title: string;
   path: string;
   priority: number;
-  status: string;
+  status: BugFrontmatter['status'];
   shortcut_card?: string;
 }

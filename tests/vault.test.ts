@@ -24,6 +24,11 @@ describe("slugify", () => {
   it("truncates to 60 chars", () => {
     expect(slugify("a".repeat(70))).toHaveLength(60);
   });
+
+  it('strips trailing hyphen introduced by truncation', () => {
+    // 'a'.repeat(59) + '!extra' → after replace: 'aaa...a-extra', slice(0,60) = 'aaa...a-', strip → 'aaa...a'
+    expect(slugify('a'.repeat(59) + '!extra')).toMatch(/[a-z0-9]$/);
+  });
 });
 
 describe("getVaultPath", () => {
